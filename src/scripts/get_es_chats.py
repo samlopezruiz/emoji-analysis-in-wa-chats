@@ -1,10 +1,13 @@
 import os
 from shutil import copyfile
 
+from googletrans import Translator
+
 from src.scripts.utils.files import read_chat
 from src.scripts.utils.nlp import get_language
 
 if __name__ == '__main__':
+    translator = Translator()
     data_folder = os.path.join('..', 'data', 'csv')
     es_folder = os.path.join('..', 'data', 'es')
 
@@ -18,7 +21,7 @@ if __name__ == '__main__':
 
         person_A, person_B, chat = read_chat(file_path)
 
-        if chat.shape[0] > 50 and get_language(chat) == 'es':
+        if chat.shape[0] > 50 and get_language(chat, translator) == 'es':
             copyfile(file_path, os.path.join(es_folder, csv_file))
 
 

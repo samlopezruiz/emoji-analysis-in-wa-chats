@@ -20,5 +20,6 @@ if __name__ == '__main__':
     translator = Translator()
     line = 'frase de prueba'
     # print(detect_language(line))
-    print(translator.detect(line))
+    lan = translator.detect(line).lang
+    # print(translator.detect(line))
     # print(TextBlob(str(line)).detect_language())
