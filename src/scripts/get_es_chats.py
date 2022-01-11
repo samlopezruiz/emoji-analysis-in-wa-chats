@@ -21,5 +21,7 @@ if __name__ == '__main__':
 
         lan = get_language(chat, translator)
         print('{}: {}'.format(i, lan))
+        if isinstance(lan, list):
+            lan = lan[0]
         if chat.shape[0] > 50 and lan == 'es':
             copyfile(file_path, os.path.join(es_folder, csv_file))
