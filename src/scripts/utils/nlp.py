@@ -1,15 +1,13 @@
-from textblob import TextBlob
 import numpy as np
 
 def get_language(df, translator):
-    ixs = np.random.randint(0, df.shape[0], size=20)
+    ixs = np.random.randint(0, df.shape[0], size=5)
     random_lines = [df.iloc[ix, 1] for ix in ixs]
 
     langs = []
     for line in random_lines:
         try:
             langs.append(translator.detect(line).lang)
-            # langs.append(TextBlob(str(line)).detect_language())
         except:
             pass
 
