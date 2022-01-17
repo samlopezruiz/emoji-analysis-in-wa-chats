@@ -10,7 +10,7 @@ from src.scripts.utils.emoji_lib import get_df_from_emoji_stats
 from src.scripts.utils.files import read_chat
 from src.scripts.utils.nlp import get_unique_emoji_stats, get_emojis_stats, get_person_categories, \
     get_counts_per_person_feature
-from src.scripts.utils.plot import plot_position_histogram, descending_bar_plot, custom_colors, stacked_histogram
+from src.scripts.utils.plot import plot_position_histogram, descending_bar_plot
 from src.scripts.utils.util import sort_dict_by_key
 
 if __name__ == '__main__':
@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     black_list = ['']
     results = []
-    for i, csv_file in enumerate(csv_files):
+    for i, csv_file in enumerate(csv_files[71:500]):
         if verbose:
             print('\nProcessing chat: {}'.format(csv_file))
         else:
@@ -30,6 +30,8 @@ if __name__ == '__main__':
         file_path = os.path.join(es_folder, csv_file)
 
         person_A, person_B, chat = read_chat(file_path)
+
+        # %%
         persons_cat = [get_person_categories(person) for person in [person_A, person_B]]
         emojis_found = get_emojis_stats(chat, max_thold=100)
         unique_emojis = get_unique_emoji_stats(emojis_found)
@@ -51,33 +53,25 @@ if __name__ == '__main__':
 
         results.append(chat_result)
 
-    #%% Get counts and plot
-    total_counts = [res['stats']['count'] for res in results]
-    total_counts = pd.concat(total_counts, axis=0).groupby(by='emoji').sum().sort_values(by='count', ascending=False)
+    # %%
+    count = results[0]['stats']['count']
+    fig = px.bar(count,
+                 x='emoji',
+                 y='count',
+                 color='person',
+                 title='Emojis count for chat {}'.format(csv_file),
+                 text_auto=True).update_xaxes(categoryorder="total descending")
+    fig.update_layout(xaxis=dict(tickfont=dict(size=15)))
+    fig.show()
 
-    features = ['genero', 'lugar_nacimiento']
-    plot_top = 30
+    # %% Plot single histogram of an chat
+    file_ix = 0
+    emoji_ix = 0
+    emojis_in_chat = results[file_ix]['emojis_in_chat']
+    sorted_unique_emojis = results[file_ix]['unique_emojis']
+    positions = results[file_ix]['stats']['positions'][emoji_ix]
 
-    for feature in features:
-        counts_emoji = get_counts_per_person_feature(feature, results)
-        descending_bar_plot(counts_emoji, x='emoji', y='count', color=feature, plot_top=30)
-
-
-    #%% Get positions and filter top n emojis
-    all_positions = [pd.concat(res['stats']['positions'], axis=0) for res in results]
-    positions = pd.concat(all_positions, axis=0)
-
-    max_top = 10
-    mask = positions['emoji'].isin(list(total_counts.index[:max_top]))
-    filtered_positions = positions[mask]
-
-    #%% Plot position distribution
-    stacked_histogram(filtered_positions, "n_letters", groupby='emoji', end=100, bin_size=1)
-    stacked_histogram(filtered_positions, "n_words", groupby='emoji', end=10, bin_size=1)
-
-    stacked_histogram(filtered_positions, "rel_pos_in_letters", groupby='emoji', end=1, bin_size=0.05)
-    stacked_histogram(filtered_positions, "pos_in_letters", groupby='emoji', end=100, bin_size=1)
-    stacked_histogram(filtered_positions, "rel_pos_in_words", groupby='emoji', end=1, bin_size=0.05)
-    stacked_histogram(filtered_positions, "pos_in_words", groupby='emoji', end=20, bin_size=1)
-
-
+    title = 'Position distribution for emoji: {} <br>Count: {}, Chat: {}'.format(sorted_unique_emojis[emoji_ix]['emoji'],
+                                                                                 sorted_unique_emojis[emoji_ix]['total_count'],
+                                                                                 results[file_ix]['filename'])
+    plot_position_histogram(positions, title)
