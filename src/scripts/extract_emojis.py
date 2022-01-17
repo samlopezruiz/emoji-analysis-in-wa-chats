@@ -84,4 +84,3 @@ if __name__ == '__main__':
     stacked_histogram(filtered_positions, "rel_pos_in_words", groupby='emoji', end=1, bin_size=0.05)
     stacked_histogram(filtered_positions, "pos_in_words", groupby='emoji', end=20, bin_size=1)
 
-    # %%

@@ -1,9 +1,8 @@
 from copy import deepcopy, copy
 
-import emoji
 import numpy as np
 import pandas as pd
-from emoji import emoji_lis, distinct_emoji_lis, demojize, emojize
+from emoji import emoji_lis, demojize, emojize
 
 from src.scripts.utils.util import shift_left_according_to_another_list
 
@@ -68,33 +67,38 @@ def get_stats_from_emojis(ems_loc, text, static_info=None, ignore_skins=True):
     pos = [em['location'] for em in ems_loc]
 
     # Remove skin tone from emojis if needed
-    # ems = [(em['emoji'][0] if ignore_skins and 'skin_tone' in demojize(em['emoji']) else em['emoji']) for em in ems_loc]
     ems, skins = [], []
     for em in ems_loc:
-        if ignore_skins and 'skin_tone' in demojize(em['emoji']):
+        if 'skin_tone' in demojize(em['emoji']):
             remove_skin_pos = -1
             for i, c in enumerate(em['emoji']):
                 if 'skin_tone' in demojize(c):
                     remove_skin_pos = i
                     skins.append(em['emoji'][i])
 
-            emoji_wo_skin_color = em['emoji'][:remove_skin_pos] + em['emoji'][remove_skin_pos + 1:]
+            if ignore_skins:
+                emoji_wo_skin_color = em['emoji'][:remove_skin_pos] + em['emoji'][remove_skin_pos + 1:]
+            else:
+                emoji_wo_skin_color = em['emoji']
 
             ems.append(emoji_wo_skin_color)
         else:
             ems.append(em['emoji'])
 
     # Process text depending on ignore_skin preference
-    # skins = [em['emoji'][1] for em in ems_loc if 'skin_tone' in demojize(em['emoji'])]
+
+
+    skins_pos = [np.array([i for i in range(len(orig_text)) if orig_text.startswith(skin, i)]) for skin in np.unique(skins)]
+
+    if len(skins_pos) > 0:
+        skins_pos = np.concatenate(skins_pos)
+        pos = shift_left_according_to_another_list(pos, skins_pos)
+
     if ignore_skins:
         for skin in np.unique(skins):
             text = text.replace(skin, "")
         n_letters = len(text)
     else:
-        skins_pos = [np.array([i for i in range(len(text)) if text.startswith(skin, i)]) for skin in np.unique(skins)]
-        if len(skins_pos) > 0:
-            skins_pos = np.concatenate(skins_pos)
-            pos = shift_left_according_to_another_list(pos, skins_pos)
         n_letters = len(text) - len(skins_pos)
 
     # Count unique emojis

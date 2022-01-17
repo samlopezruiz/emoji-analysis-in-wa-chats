@@ -1,10 +1,4 @@
-from copy import copy
-
-import numpy as np
-from emoji import demojize, emojize
-
 from src.scripts.utils.nlp import get_stats_from_emojis, find_emojis
-from src.scripts.utils.util import shift_left_according_to_another_list
 
 if __name__ == '__main__':
     #%%
