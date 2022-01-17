@@ -163,7 +163,7 @@ def get_emojis_stats(chat, max_thold=100):
 
     return emojis_found
 
-def get_unique_emoji_stats(emojis_found):
+def get_unique_emoji_stats(emojis_found, file):
     unique_emojis = {}
     for j, em_found in enumerate(emojis_found):
         for i, em in enumerate(em_found['emojis']):
@@ -178,6 +178,9 @@ def get_unique_emoji_stats(emojis_found):
                                               'lines': [em_found['line']],
                                               'count': [em_found['count'][i]],
                                               'total_count': em_found['count'][i],
+                                              'file': [file for _ in em_found['pos_in_letters'][i]],
+                                              'line_in_chat': [em_found['line'] for _ in em_found['pos_in_letters'][i]],
+                                              'text': [em_found['text'] for _ in em_found['pos_in_letters'][i]],
                                               'n_letters': [em_found['n_letters'] for _ in em_found['pos_in_letters'][i]],
                                               'n_words': [em_found['n_words'] for _ in em_found['pos_in_words'][i]],
                                               'pos_in_letters': em_found['pos_in_letters'][i],
@@ -192,6 +195,9 @@ def get_unique_emoji_stats(emojis_found):
                 unique_emojis[em]['lines'].append(em_found['line'])
                 unique_emojis[em]['count'].append(em_found['count'][i])
                 unique_emojis[em]['total_count'] += em_found['count'][i]
+                [unique_emojis[em]['file'].append(file) for _ in em_found['pos_in_letters'][i]]
+                [unique_emojis[em]['line_in_chat'].append(em_found['line']) for _ in em_found['pos_in_letters'][i]]
+                [unique_emojis[em]['text'].append(em_found['text']) for _ in em_found['pos_in_letters'][i]]
                 [unique_emojis[em]['n_letters'].append(em_found['n_letters']) for _ in em_found['pos_in_letters'][i]]
                 [unique_emojis[em]['n_words'].append(em_found['n_words']) for _ in em_found['pos_in_words'][i]]
                 [unique_emojis[em]['pos_in_letters'].append(a) for a in em_found['pos_in_letters'][i]]

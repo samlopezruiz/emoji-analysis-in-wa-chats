@@ -22,6 +22,9 @@ def get_df_from_emoji_stats(stats):
     for i, emoji_stats in enumerate(stats):
         # print(i)
         pos = pd.DataFrame()
+        pos['file'] = emoji_stats['file']
+        pos['line_in_chat'] = emoji_stats['line_in_chat']
+        pos['text'] = emoji_stats['text']
         pos['n_letters'] = emoji_stats['n_letters']
         pos['n_words'] = emoji_stats['n_words']
         pos['pos_in_words'] = emoji_stats['pos_in_words']

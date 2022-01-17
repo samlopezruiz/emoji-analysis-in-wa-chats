@@ -32,6 +32,7 @@ def stacked_histogram(df, feature, groupby, end=1, bin_size=0.05):
     fig.update_layout(barmode='stack',
                       title='Distribution for top emojis of: {}'.format(feature),
                       legend=dict(font=dict(size=15)))
+
     fig.update_traces(opacity=1)
     fig.show()
 
