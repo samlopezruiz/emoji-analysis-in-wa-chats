@@ -91,7 +91,7 @@ def descending_bar_plot(df, x, y, color=None, plot_top=None):
                  y=y,
                  color=color,
                  title='Emojis count'.format(),
-                 text_auto=True).update_xaxes(categoryorder="total descending")
+                 ).update_xaxes(categoryorder="total descending")
 
     if plot_top is not None:
         fig.update_layout(xaxis=dict(range=[-0.5, plot_top+0.5]))

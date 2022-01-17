@@ -59,8 +59,8 @@ if __name__ == '__main__':
                  x='emoji',
                  y='count',
                  color='person',
-                 title='Emojis count for chat {}'.format(csv_file),
-                 text_auto=True).update_xaxes(categoryorder="total descending")
+                 title='Emojis count for chat {}'.format(csv_file)
+                 ).update_xaxes(categoryorder="total descending")
     fig.update_layout(xaxis=dict(tickfont=dict(size=15)))
     fig.show()
 

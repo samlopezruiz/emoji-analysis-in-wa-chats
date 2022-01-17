@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     for feature in features:
         counts_emoji = get_counts_per_person_feature(feature, results)
-        descending_bar_plot(counts_emoji, x='emoji', y='count', color=feature, plot_top=30)
+        descending_bar_plot(counts_emoji, x='emoji', y='count', color=feature, plot_top=plot_top)
 
     # %% Filter top n emojis
     max_top = 10
