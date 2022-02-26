@@ -1,19 +1,16 @@
 import os
 
-import emoji
-import numpy as np
-import pandas as pd
 import plotly.express as px
-from emoji import emojize, demojize, get_emoji_regexp, emoji_lis, distinct_emoji_lis
 
 from src.scripts.utils.emoji_lib import get_df_from_emoji_stats
 from src.scripts.utils.files import read_chat
 from src.scripts.utils.nlp import get_unique_emoji_stats, get_emojis_stats, get_person_categories, \
-    get_counts_per_person_feature
-from src.scripts.utils.plot import plot_position_histogram, descending_bar_plot
+    get_unique_contiguous_emoji_stats
+from src.scripts.utils.plot import plot_position_histogram
 from src.scripts.utils.util import sort_dict_by_key
 
 if __name__ == '__main__':
+    #%%
     es_folder = os.path.join('..', 'data', 'es')
     csv_files = os.listdir(es_folder)
     verbose = False
@@ -21,7 +18,7 @@ if __name__ == '__main__':
 
     black_list = ['']
     results = []
-    for i, csv_file in enumerate(csv_files[71:500]):
+    for i, csv_file in enumerate(csv_files[:1]):
         if verbose:
             print('\nProcessing chat: {}'.format(csv_file))
         else:
@@ -34,8 +31,10 @@ if __name__ == '__main__':
         # %%
         persons_cat = [get_person_categories(person) for person in [person_A, person_B]]
         emojis_found = get_emojis_stats(chat, max_thold=100)
-        unique_emojis = get_unique_emoji_stats(emojis_found)
+        unique_emojis = get_unique_emoji_stats(emojis_found, csv_file)
+        # unique_contiguous_emojis = get_unique_contiguous_emoji_stats(emojis_found, csv_file)
         sorted_unique_emojis = sort_dict_by_key(sort_key='total_count', dict_to_sort=unique_emojis)
+        # sorted_unique_contiguous_emojis = sort_dict_by_key(sort_key='total_count', dict_to_sort=unique_contiguous_emojis)
         stats = get_df_from_emoji_stats(sorted_unique_emojis)
 
         if verbose:
@@ -48,6 +47,7 @@ if __name__ == '__main__':
                        'emojis_in_chat': emojis_found,
                        'persons': {"A": persons_cat[0], 'B': persons_cat[1]},
                        'unique_emojis': sorted_unique_emojis,
+                       # 'unique_contiguous_emojis': sorted_unique_contiguous_emojis,
                        'stats': stats
                        }
 

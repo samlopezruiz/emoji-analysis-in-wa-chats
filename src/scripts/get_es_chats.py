@@ -1,7 +1,7 @@
 import os
 from shutil import copyfile
 from src.scripts.utils.files import read_chat
-from src.scripts.utils.nlp import get_language
+from src.scripts.utils.nlp import get_language, remove_emojis_from_text
 from google.cloud import translate_v2 as translate
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'D:\\MEGA\\Proyectos\\Moni LV\\Tesis\\nlp-chats-8004be07cbd4.json'
 
@@ -23,9 +23,13 @@ if __name__ == '__main__':
 
         lan = get_language(chat, translate_client)
 
+        chat['text'] = chat['conversacion'].astype(str).apply(remove_emojis_from_text)
+        chat['n_words'] = chat['text'].str.split(' ').str.len()
+        n_words = sum(chat['n_words'].dropna())
+
         if isinstance(lan, list):
             lan = lan[0]
 
-        if chat.shape[0] > 50 and lan == 'es':
+        if n_words > 50 and lan == 'es':
             es_count += 1
             copyfile(file_path, os.path.join(es_folder, csv_file))
