@@ -452,6 +452,7 @@ def get_unique_emoji_stats(emojis_found, file):
                                               'file': [file for _ in em_found['pos_in_letters'][i]],
                                               'line_in_chat': [em_found['line'] for _ in em_found['pos_in_letters'][i]],
                                               'n_emojis': [em_found['n_emojis'] for _ in em_found['pos_in_letters'][i]],
+                                              'text_': [em_found['text']],
                                               'text': [em_found['text'] for _ in em_found['pos_in_letters'][i]],
                                               'previous_words': em_found['previous_words'][i],
                                               'following_words': em_found['following_words'][i],
@@ -475,6 +476,7 @@ def get_unique_emoji_stats(emojis_found, file):
                 [unique_emojis[em]['file'].append(file) for _ in em_found['pos_in_letters'][i]]
                 [unique_emojis[em]['n_emojis'].append(em_found['n_emojis']) for _ in em_found['pos_in_letters'][i]]
                 [unique_emojis[em]['line_in_chat'].append(em_found['line']) for _ in em_found['pos_in_letters'][i]]
+                unique_emojis[em]['text_'].append(em_found['text'])
                 [unique_emojis[em]['text'].append(em_found['text']) for _ in em_found['pos_in_letters'][i]]
                 [unique_emojis[em]['previous_words'].append(a) for a in em_found['previous_words'][i]]
                 [unique_emojis[em]['following_words'].append(a) for a in em_found['following_words'][i]]
@@ -525,28 +527,30 @@ def get_unique_emoji_stats(emojis_found, file):
 #     return unique_emojis
 
 
-def get_counts_per_person_feature(feature, results, stat_key='stats'):
-    counts = []
+def merge_and_add_person_feature(feature, results, stat_key='stats'):
+    all = [[]]*2
     for i, res in enumerate(results):
         if len(res['unique_emojis']) > 0:
-            df = res[stat_key]['count']
+            dfs = [res[stat_key]['count'], pd.concat(res[stat_key]['messages'], axis=0)]
             try:
-                feature_col = [res['persons'][p][feature] for p in df['person']]
-                df[feature] = feature_col
-                df['file'] = res['filename']
-                counts.append(df)
+                for i, df in enumerate(dfs):
+                    feature_col = [res['persons'][p][feature] for p in df['person']]
+                    df[feature] = feature_col
+                    df['file'] = res['filename']
+                    all[i].append(df)
             except KeyError as e:
                 print('person feature not found in file: {}'.format(res['filename']))
 
-    counts = pd.concat(counts, axis=0).sort_values(by='count', ascending=False)
-    counts_emoji = counts.groupby(by=['emoji', feature]).sum().reset_index().sort_values(by='count', ascending=False)
+    df_with_feature = pd.concat(all[0], axis=0).sort_values(by='count', ascending=False)
+    counts_emoji = df_with_feature.groupby(by=['emoji', feature]).sum().reset_index().sort_values(by='count', ascending=False)
 
-    return counts_emoji
+    all_lines = pd.concat(all[1], axis=0)
+    return counts_emoji, all_lines
 
 def concat_and_put_person_feature(features, results):
-    dfs = [[] for i in range(2)]
+    dfs = [[] for i in range(3)]
     for i, res in enumerate(results):
-        for j, df in enumerate([res['chat'], res['lines_with_emojis']]):
+        for j, df in enumerate([res['chat'], res['lines_with_emojis'], res['chats_wo_media']]):
             if len(df) > 0:
                 try:
                     for feature in features:
@@ -557,7 +561,7 @@ def concat_and_put_person_feature(features, results):
                     print('person feature not found in file: {}'.format(res['filename']))
 
     res = [pd.concat(d) for d in dfs]
-    return {'chats': res[0], 'all_lines_with_emojis': res[1]}
+    return {'chats': res[0], 'all_lines_with_emojis': res[1], 'chat_wo_media': res[2]}
 
 
 def get_value_counts_lastprev_words(df_ss, emoji_key):
@@ -582,6 +586,13 @@ def get_value_counts_lastprev_words(df_ss, emoji_key):
     df['emoji'] = emoji_key
     return df
 
+def filter_media_from_chat(chat):
+    chat = chat.loc[chat['conversacion'] != '<Multimedia omitido>', :]
+    chat = chat.loc[chat['conversacion'] != 'Video omitido', :]
+    chat = chat.loc[chat['conversacion'] != '‎audio omitido', :]
+    chat = chat.loc[chat['conversacion'] != '‎imagen omitida', :]
+
+    return chat
 
 def get_general_stats(chat, emojis_found, csv_file):
     chat = chat.copy()
@@ -591,10 +602,12 @@ def get_general_stats(chat, emojis_found, csv_file):
     chat['n_words'] = n_words
     chat['text_wo_e'] = chat['conversacion'].astype(str).apply(remove_emojis_from_text)
     chat['n_words_wo_e'] = chat['text_wo_e'].str.split(' ').str.len()
+    chat['n_letters'] = chat['conversacion'].str.len()
 
+    chats_wo_media = filter_media_from_chat(chat)
 
     if len(emojis_found) == 0:
-        return {'chat': chat, 'lines_with_emojis': pd.DataFrame()}
+        return {'chat': chat, 'lines_with_emojis': pd.DataFrame(), 'chats_wo_media': chats_wo_media}
 
     keys = ['person', 'n_words', 'n_letters', 'line', 'n_emojis']
     cols = {}
@@ -612,7 +625,7 @@ def get_general_stats(chat, emojis_found, csv_file):
     df['file'] = csv_file
 
 
-    return {'chat': chat, 'lines_with_emojis': df}
+    return {'chat': chat, 'lines_with_emojis': df, 'chats_wo_media': chats_wo_media}
 
 def remove_emojis_from_text(text):
     return emoji.get_emoji_regexp().sub('', text).strip()

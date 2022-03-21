@@ -6,7 +6,7 @@ import pandas as pd
 from src.scripts.utils.emoji_lib import get_df_from_emoji_stats
 from src.scripts.utils.files import read_chat
 from src.scripts.utils.nlp import get_unique_emoji_stats, get_emojis_stats, get_person_categories, \
-    get_counts_per_person_feature, get_value_counts_lastprev_words
+    merge_and_add_person_feature, get_value_counts_lastprev_words
 from src.scripts.utils.plot import descending_bar_plot, stacked_histogram
 from src.scripts.utils.save import save_emoji_stats, save_counts_stats
 from src.scripts.utils.util import sort_dict_by_key
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         if verbose:
             print('\nProcessing chat: {}'.format(csv_file))
         else:
-            print('Progress: {}/{}'.format(i, len(csv_files)), end='\r')
+            print('Progress: {}/{}'.format(i+1, len(csv_files)), end='\r')
 
         file_path = os.path.join(es_folder, csv_file)
 

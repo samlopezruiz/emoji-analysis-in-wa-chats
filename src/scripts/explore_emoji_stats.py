@@ -2,20 +2,24 @@ import os
 
 import joblib
 import pandas as pd
+from statsmodels.stats.proportion import proportions_ztest
 
-from src.scripts.utils.nlp import get_counts_per_person_feature, get_value_counts_lastprev_words
+from src.scripts.prob.mutual_information import mutual_information_from_counts
+from src.scripts.utils.nlp import merge_and_add_person_feature, get_value_counts_lastprev_words
 from src.scripts.utils.plot import descending_bar_plot, stacked_histogram
 from src.scripts.utils.save import save_emoji_stats, save_counts_stats
+import numpy as np
 
 if __name__ == '__main__':
     results_folder = os.path.join('..', 'data', 'emojis')
     save_csv = False
     sequential_emojis = False
-    save_plots = False
+    save_plots = True
     label_scale = 1
     res_path = os.path.join(results_folder, ('sequential' if sequential_emojis else 'single'), 'results.z')
     img_path = os.path.join('..', 'results', ('sequential' if sequential_emojis else 'single'), 'img')
     results_path = os.path.join('..', 'results', ('sequential' if sequential_emojis else 'single'))
+    os.makedirs(results_path, exist_ok=True)
     results = joblib.load(res_path)
     print('...file loaded')
 
@@ -32,19 +36,76 @@ if __name__ == '__main__':
     emoji_stats = pd.concat(all_stats, axis=0)
 
     # %% Plot counts
-    features = ['genero', 'edad'] #, 'lugar_nacimiento']
+    feature = 'genero' #, 'edad', 'lugar_nacimiento']
     plot_top = 50
 
-    for feature in features:
-        counts_emoji = get_counts_per_person_feature(feature, results)
-        descending_bar_plot(counts_emoji,
-                            x='emoji',
-                            y='count',
-                            color=feature,
-                            plot_top=plot_top,
-                            file_path=os.path.join(img_path, '{}_count'.format(feature)),
-                            label_scale=label_scale,
-                            save=save_plots)
+    counts_emoji, all_lines = merge_and_add_person_feature(feature, results)
+    counts_emoji = counts_emoji.loc[counts_emoji[feature] != 'N/A', :]
+    dfs = []
+    for g, df_ss in counts_emoji.groupby(feature):
+        df_ss['perc'] = df_ss['count'] / sum(df_ss['count'])
+        dfs.append(df_ss)
+    counts_emoji = pd.concat(dfs, axis=0)
+
+    total_counts_gender = counts_emoji.pivot_table(values=['count', 'perc'], columns='genero', index='emoji')
+    total_counts_gender.fillna(0, inplace=True)
+    total_counts_gender = total_counts_gender.astype(float)
+    total_counts_gender['total'] = total_counts_gender['count']['Masculino'] + total_counts_gender['count']['Femenino']
+    total_counts_gender.sort_values(by='total', ascending=False, inplace=True)
+    total_counts_gender.reset_index(inplace=True)
+
+    pvals = []
+    for ix, row in total_counts_gender.iterrows():
+        ixs_sorted = row['perc'].argsort().sort_values(ascending=False)
+        if np.any(row['count'] == 0):
+            pvals.append(np.nan)
+        else:
+            total = (row['count'] / row['perc'])[ixs_sorted.index]
+            percs = row['perc'][ixs_sorted.index]
+            count = row['count'][ixs_sorted.index]
+            stat, pval = proportions_ztest(count.values, total.values, alternative='two-sided')
+            pvals.append(pval)
+
+    total_counts_gender['pval'] = pvals
+
+    descending_bar_plot(counts_emoji,
+                        x='emoji',
+                        y='perc',
+                        color=feature,
+                        plot_top=plot_top,
+                        file_path=os.path.join(img_path, '{}_count'.format(feature)),
+                        label_scale=label_scale,
+                        save=save_plots)
+
+    total_counts_gender.to_csv(os.path.join(results_path, 'total_count_genero.csv'),index=False, encoding='utf-8-sig')
+
+    #%% Mutual information
+    # lines_count = all_lines.shape[0]
+    masculino_count = sum(all_lines['genero'] == 'Masculino')
+    femenino_count = sum(all_lines['genero'] == 'Femenino')
+
+    em_keys, mis, gens, perc_m, perc_f = [] , [], [], [], []
+    for emoji_key, df_ss in all_lines.groupby('emoji'):
+        c_m = sum(df_ss['genero'] == 'Masculino')
+        c_f = sum(df_ss['genero'] == 'Femenino')
+        gens.append('Masculino' if c_m/masculino_count > c_f/femenino_count else 'Femenino')
+        arr = np.array([[c_m, c_f], [masculino_count, femenino_count]])
+        em_keys.append(emoji_key)
+        mis.append(mutual_information_from_counts(arr))
+        perc_m.append(c_m/masculino_count)
+        perc_f.append(c_f/femenino_count)
+
+    mi = pd.DataFrame()
+    mi['emoji'] = em_keys
+    mi['mi'] = mis
+    mi['genero'] = gens
+    mi['msgsPercFemenino'] = perc_f
+    mi['msgsPercMasculino'] = perc_m
+    mi.sort_values('mi', inplace=True, ascending=False)
+
+    total_counts_gender.columns = [''.join(col) for col in total_counts_gender.columns]
+    final_stats = pd.merge(total_counts_gender, mi, on='emoji', how='outer')
+    final_stats.to_csv(os.path.join(results_path, 'mutual_information.csv'), encoding='utf-8-sig')
 
     # %% Filter top n emojis
     max_top = 10
@@ -61,6 +122,9 @@ if __name__ == '__main__':
                       file_path=os.path.join(img_path, 'rel_pos_in_letters_filtered_all'),
                       label_scale=label_scale,
                       save=save_plots)
+
+    filtered_stats_with_letters.to_csv(os.path.join(results_path, 'filtered_stats_with_letters.csv'),
+                                       encoding='utf-8-sig')
 
     #%% Get frequency of previous and following words
     freq_bigrams = {}

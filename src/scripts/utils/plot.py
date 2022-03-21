@@ -89,7 +89,6 @@ def plot_position_histogram(positions, title=None,
                             save_png=False,
                             size=(1980, 1080),
                             label_scale=1.5):
-
     fig = make_subplots(rows=2,
                         cols=2,
                         subplot_titles=("Position in words", "Relative position in words",
@@ -147,12 +146,15 @@ def descending_bar_plot(df, x, y, color=None, plot_top=None,
                         save=False,
                         save_png=False,
                         size=(1980, 1080),
-                        label_scale=1.5):
+                        label_scale=1.5,
+                        ):
+
     fig = px.bar(df,
                  x=x,
                  y=y,
                  color=color,
                  title='Emojis count'.format(),
+                 barmode='group',
                  ).update_xaxes(categoryorder="total descending")
 
     if plot_top is not None:

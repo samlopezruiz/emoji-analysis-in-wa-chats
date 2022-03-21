@@ -18,7 +18,8 @@ def get_persons_attributes(results, features):
 def get_df_from_emoji_stats(stats, emoji_key='emoji', keys=None):
     if len(stats) == 0:
         return {'count': pd.DataFrame(),
-                'positions': [pd.DataFrame()]}
+                'positions': [pd.DataFrame()],
+                'messages': [pd.DataFrame()]}
 
     counts_per_person = []
     for stat in stats:
@@ -32,10 +33,23 @@ def get_df_from_emoji_stats(stats, emoji_key='emoji', keys=None):
 
     count_res = pd.concat(counts_per_person, axis=0)
 
+    messages = []
     positions = []
     for i, emoji_stats in enumerate(stats):
         # positions.append(pd.DataFrame.from_dict(emoji_stats))
         # print(i)
+        msg = pd.DataFrame()
+        for key in ['person', 'count', 'text_']:
+            try:
+                msg[key] = emoji_stats[key]
+            except Exception as e:
+                print(e)
+                print(i)
+                print(emoji_stats)
+
+        msg['emoji'] = emoji_stats['emoji']
+        messages.append(msg)
+
         pos = pd.DataFrame()
         if keys is None:
             keys = ['file', 'line_in_chat', 'text', 'n_letters', 'n_words', 'pos_in_words', 'rel_pos_in_words',
@@ -44,23 +58,14 @@ def get_df_from_emoji_stats(stats, emoji_key='emoji', keys=None):
         for key in keys:
             try:
                 pos[key] = emoji_stats[key]
-                # pos[key] = np.array(emoji_stats[key]).ravel()
             except Exception as e:
                 print(e)
                 print(i)
                 print(emoji_stats)
-        # pos['file'] = emoji_stats['file']
-        # pos['line_in_chat'] = emoji_stats['line_in_chat']
-        # pos['text'] = emoji_stats['text']
-        # pos['n_letters'] = emoji_stats['n_letters']
-        # pos['n_words'] = emoji_stats['n_words']
-        # pos['pos_in_words'] = emoji_stats['pos_in_words']
-        # pos['rel_pos_in_words'] = emoji_stats['rel_pos_in_words']
-        # pos['pos_in_letters'] = emoji_stats['pos_in_letters']
-        # pos['rel_pos_in_letters'] = emoji_stats['rel_pos_in_letters']
-        # pos['emoji'] = emoji_stats['emoji']
+
         positions.append(pos)
 
 
     return {'count': count_res,
-            'positions': positions}
+            'positions': positions,
+            'messages': messages}
