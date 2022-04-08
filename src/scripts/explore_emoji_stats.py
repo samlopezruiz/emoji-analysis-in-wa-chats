@@ -29,7 +29,7 @@ if __name__ == '__main__':
     counts = total_counts.to_dict()['count']
 
     print('unique emojis: {}, emojis count: {}'.format(len(counts), sum(total_counts['count'])))
-    total_counts.to_csv(os.path.join(results_path, 'total_count.csv'))
+    total_counts.to_csv(os.path.join(results_path, 'total_count.csv'), encoding='utf-8-sig')
 
     # %% Aggregate stats
     all_stats = [pd.concat(res['stats']['positions'], axis=0) for res in results]
@@ -68,16 +68,26 @@ if __name__ == '__main__':
 
     total_counts_gender['pval'] = pvals
 
-    descending_bar_plot(counts_emoji,
+    counts_emoji_plot = counts_emoji.copy()
+    counts_emoji_plot['gender'] = counts_emoji_plot['genero']
+    counts_emoji_plot['gender'] = counts_emoji_plot['gender'].str.replace('Femenino', 'female')
+    counts_emoji_plot['gender'] = counts_emoji_plot['gender'].str.replace('Masculino', 'male')
+
+
+    #%%
+    descending_bar_plot(counts_emoji_plot,
                         x='emoji',
                         y='perc',
-                        color=feature,
+                        color='gender',
                         plot_top=plot_top,
                         file_path=os.path.join(img_path, '{}_count'.format(feature)),
                         label_scale=label_scale,
+                        title='Emojis count by gender ',
                         save=save_plots)
 
-    total_counts_gender.to_csv(os.path.join(results_path, 'total_count_genero.csv'),index=False, encoding='utf-8-sig')
+    total_counts_gender.to_csv(os.path.join(results_path, 'total_count_genero.csv'),
+                               index=False,
+                               encoding='utf-8-sig')
 
     #%% Mutual information
     # lines_count = all_lines.shape[0]
@@ -108,7 +118,7 @@ if __name__ == '__main__':
     final_stats.to_csv(os.path.join(results_path, 'mutual_information.csv'), encoding='utf-8-sig')
 
     # %% Filter top n emojis
-    max_top = 10
+    max_top = 1000
     mask = emoji_stats['emoji'].isin(list(total_counts.index[:max_top]))
     filtered_stats = emoji_stats[mask]
 

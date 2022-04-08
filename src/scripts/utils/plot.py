@@ -147,13 +147,13 @@ def descending_bar_plot(df, x, y, color=None, plot_top=None,
                         save_png=False,
                         size=(1980, 1080),
                         label_scale=1.5,
-                        ):
+                        return_fig=False,
+                        title=None):
 
     fig = px.bar(df,
                  x=x,
                  y=y,
                  color=color,
-                 title='Emojis count'.format(),
                  barmode='group',
                  ).update_xaxes(categoryorder="total descending")
 
@@ -162,9 +162,13 @@ def descending_bar_plot(df, x, y, color=None, plot_top=None,
         # df = df.iloc[:plot_top, :]
 
     fig.update_layout(legend=dict(font=dict(size=18 * label_scale)))
+    fig.update_layout(title=title if title is not None else 'Emojis count')
     fig.update_xaxes(tickfont=dict(size=14 * label_scale), title_font=dict(size=18 * label_scale))
     fig.update_yaxes(tickfont=dict(size=14 * label_scale), title_font=dict(size=18 * label_scale))
     fig.show()
+
+    if return_fig:
+        return fig
 
     if file_path is not None and save is True:
         plotly_save(fig, file_path, size, save_png=save_png)
